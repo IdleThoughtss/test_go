@@ -3,14 +3,14 @@ package main
 import (
 	"github.com/IdleThoughtss/login"
 	"fmt"
+	//"regexp"
 )
 
 func main() {
-	_ ,err := login.GetQrcode()
+	err := login.GetQrcode()
 	if err != nil {
 		fmt.Print("request failed!")
 		return
 	}
-	fmt.Println("Scan the qrcode please!")
 
 }
