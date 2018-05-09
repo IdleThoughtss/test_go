@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"regexp"
 	"encoding/xml"
+	"runtime"
 )
 
 var config struct{
@@ -18,27 +19,25 @@ var config struct{
 	redirectUrl string
 }
 
-type cookieInfo struct {
-	e errorMsg `xml:"error"`
-}
-type errorMsg struct {
-	ret int `xml:"ret"`
-	message  string  `xml:"message"`
-	skey   string  `xml:"skey"`
-	wxsid  string `xml:"wxsid"`
-	wxuin  string `xml:"wxuin"`
-	pass_ticket  string `xml:"pass_ticket"`
-	isgrayscale  string `xml:"isgrayscale"`
+type CookieInfo struct {
+	XmlName xml.Name `xml:"error"`
+	Ret int `xml:"ret"`
+	Message  string  `xml:"message"`
+	Skey   string  `xml:"skey"`
+	Wxsid  string `xml:"wxsid"`
+	Wxuin  string `xml:"wxuin"`
+	Pass_ticket  string `xml:"pass_ticket"`
+	Isgrayscale  string `xml:"isgrayscale"`
 }
 
 
 func GetQrcode() (err error) {
 	url := "https://login.wx.qq.com/jslogin?appid=wx782c26e4c19acffb&redirect_uri=https%3A%2F%2Fwx.qq.com%2Fcgi-bin%2Fmmwebwx-bin%2Fwebwxnewloginpage&fun=new&lang=zh_CN&_=1525777185095"
 	response,err :=http.Get(url)
-	defer response.Body.Close()
 	if err != nil {
 		return
 	}
+	defer response.Body.Close()
 	body,_ := ioutil.ReadAll(response.Body)
 	uuid := string(body[50:62])
 	config.uuid = uuid
@@ -49,26 +48,33 @@ func GetQrcode() (err error) {
 func ShowQrcode() {
 	imgUrl :=  "https://login.weixin.qq.com/qrcode/" + config.uuid
 	response , err := http.Get(imgUrl)
-	defer response.Body.Close()
 	if err != nil{
 		fmt.Println("open Qrcode failed")
 		return
 	}
-	file ,err := os.Create("/tmp/qrcode.png")
-	defer file.Close()
+	defer response.Body.Close()
+	file ,err := os.Create("/tmp/qrcode.jpg")
 	if err != nil {
 		fmt.Println("create image file failed")
 		return
 	}
+	defer file.Close()
 	_,err = io.Copy(file,response.Body)
 	if err != nil {
 		fmt.Println("write Qrcode failed")
 		return
 	}
-	cmd := exec.Command("open","/tmp/qrcode.png")
-	err = cmd.Run()
+	system := runtime.GOOS
+	var cmdName string
+	if system == "linux" {
+		cmdName = "eog"
+	}else {
+		cmdName = "open"
+	}
+	 cmd := exec.Command(cmdName,"/tmp/qrcode.jpg")
+	err = cmd.Start()
 	if err != nil {
-		fmt.Println("open /tmp/qrcode.png  failed!")
+		fmt.Println("open /tmp/qrcode.jpg  failed!")
 		return
 	}
 	fmt.Println("scan the qrcode please!")
@@ -103,6 +109,7 @@ func listenScan(){
 			login()
 			return
 		case "408":
+		default:
 			time.Sleep(time.Second *1)
 		}
 	}
@@ -120,11 +127,13 @@ func login() {
 	xmlprefix :=[]byte(`<?xml version="1.0" encoding="UTF-8"?>`)
 	xmlful := append(xmlprefix,content...)
 	fmt.Println(string(xmlful))
-	v := cookieInfo{}
-	err = xml.Unmarshal(xmlful,&v)
+	var result  CookieInfo
+	err = xml.Unmarshal(xmlful,&result)
 	if err !=nil {
 		fmt.Println(err)
 	}
-	fmt.Println(v)
+	fmt.Println(result.Wxsid)
+	fmt.Println(result.Wxuin)
+	fmt.Println(result.Pass_ticket)
 
 }
