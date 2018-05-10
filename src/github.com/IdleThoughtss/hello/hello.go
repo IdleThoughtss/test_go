@@ -22,9 +22,9 @@ type Err struct {
 }
 
 func main() {
-	readjson()
+	//readjson()
 
-	return
+	//return
 	err := login.GetQrcode()
 	if err != nil {
 		fmt.Print("request failed!")
