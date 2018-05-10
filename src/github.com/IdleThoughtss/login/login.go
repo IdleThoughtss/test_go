@@ -12,12 +12,22 @@ import (
 	"regexp"
 	"encoding/xml"
 	"runtime"
+	"math/rand"
+	"encoding/json"
+	"bytes"
 )
 
 var config struct{
 	uuid string
 	redirectUrl string
 }
+
+var baseRequest  map[string]interface{}
+
+const(
+	LoginUri = "https://login.weixin.qq.com"
+	BaseUrl = "https://wx.qq.com"
+)
 
 type CookieInfo struct {
 	XmlName xml.Name `xml:"error"`
@@ -30,6 +40,13 @@ type CookieInfo struct {
 	Isgrayscale  string `xml:"isgrayscale"`
 }
 
+
+type BaseRequest struct {
+	Uin string `json:"Uin"`
+	Sid string `json:"Sid"`
+	Skey string `json:"Sid"`
+	DeviceID string `json:"Sid"`
+}
 
 func GetQrcode() (err error) {
 	url := "https://login.wx.qq.com/jslogin?appid=wx782c26e4c19acffb&redirect_uri=https%3A%2F%2Fwx.qq.com%2Fcgi-bin%2Fmmwebwx-bin%2Fwebwxnewloginpage&fun=new&lang=zh_CN&_=1525777185095"
@@ -53,7 +70,7 @@ func ShowQrcode() {
 		return
 	}
 	defer response.Body.Close()
-	file ,err := os.Create("/tmp/qrcode.jpg")
+	file ,err := os.Create("../tmp/qrcode.jpg")
 	if err != nil {
 		fmt.Println("create image file failed")
 		return
@@ -67,14 +84,16 @@ func ShowQrcode() {
 	system := runtime.GOOS
 	var cmdName string
 	if system == "linux" {
+		// ubuntu
 		cmdName = "eog"
-	}else {
+	}else if system == "darwin" {
+		// mac os
 		cmdName = "open"
 	}
-	 cmd := exec.Command(cmdName,"/tmp/qrcode.jpg")
+	 cmd := exec.Command(cmdName,"../tmp/qrcode.jpg")
 	err = cmd.Start()
 	if err != nil {
-		fmt.Println("open /tmp/qrcode.jpg  failed!")
+		fmt.Println("open ../tmp/qrcode.jpg  failed!")
 		return
 	}
 	fmt.Println("scan the qrcode please!")
@@ -132,8 +151,37 @@ func login() {
 	if err !=nil {
 		fmt.Println(err)
 	}
-	fmt.Println(result.Wxsid)
-	fmt.Println(result.Wxuin)
-	fmt.Println(result.Pass_ticket)
+	rand.Seed(time.Now().UnixNano())
+	deviceNum := rand.Intn(999999999) + rand.Intn(1) * 1000000000
+	deviceId := fmt.Sprintf("%s%d","e",deviceNum)
+	baseRequest.Sid = result.Wxsid
+	baseRequest.Uin = result.Wxuin
+	baseRequest.Skey = result.Pass_ticket
+	baseRequest.DeviceID = deviceId
+
+}
+
+func init(){
+	timeStamp := time.Now().UnixNano() /1000
+	uri :=fmt.Sprintf("%s/cgi-bin/mmwebwx-bin/webwxinit?r=",BaseUrl,timeStamp)
+	jsonBody,err := json.Marshal(baseRequest)
+	if err != nil{
+		fmt.Println("json marshal failed")
+	}
+	response,err :=http.Post(uri,"application/json",bytes.NewReader(jsonBody))
+	if err != nil {
+		fmt.Println("init failed")
+		return
+	}
+
+	defer response.Body.Close()
+	fmt.Println(response.Body)
+}
+
+func httpGet(uri string,param map[string]interface{})(body []byte, err error){
+return
+}
+
+func httpPost()  {
 
 }

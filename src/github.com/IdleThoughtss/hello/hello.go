@@ -5,7 +5,7 @@ import (
 	"fmt"
 	//"regexp"
 	"encoding/xml"
-	"log"
+	"encoding/json"
 )
 
 
@@ -22,7 +22,9 @@ type Err struct {
 }
 
 func main() {
-	//readxml()
+	readjson()
+
+	return
 	err := login.GetQrcode()
 	if err != nil {
 		fmt.Print("request failed!")
@@ -31,20 +33,11 @@ func main() {
 
 }
 
-func readxml()  {
-	xmlL := []byte(`<?xml version="1.0" encoding="UTF-8"?>
-	<error>
-<ret>1</ret>
-<message></message>
-<skey>@crypt_c0972984_47384cd60eb3f598dc1a1dcf21916cbc</skey>
-<wxsid>3i1uYbu1OwxVLJ5r</wxsid>
-<wxuin>23051855</wxuin>
-<pass_ticket>u8VmBMbOq4n7W5JPQ08bTd7mLt%2FK1%2FAKIolXRwtJwUo%3D</pass_ticket>
-<isgrayscale>1</isgrayscale>
-</error>
-`)
-	var result Err
-	xml.Unmarshal(xmlL,&result)
-	log.Println(result)
 
+func readjson()  {
+
+jsonData := `{"BaseRequest":{"Uin":0,"Sid":0},"Count":1,"List":[{"Type":1,"Text":"/cgi-bin/mmwebwx-bin/login, Second Request Start, uuid: 454d958c7f6243"}]}`
+var v map[string]interface{}
+json.Unmarshal([]byte(jsonData),&v)
+fmt.Println(v)
 }
