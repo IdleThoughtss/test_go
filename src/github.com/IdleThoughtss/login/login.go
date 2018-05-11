@@ -22,8 +22,8 @@ var config struct{
 	redirectUrl string
 }
 
-var baseRequest  map[string]interface{}
-
+var BaseRequest = make(map[string]interface{})
+var pass_ticket  string
 const(
 	LoginUri = "https://login.weixin.qq.com"
 	BaseUrl = "https://wx.qq.com"
@@ -41,12 +41,6 @@ type CookieInfo struct {
 }
 
 
-type BaseRequest struct {
-	Uin string `json:"Uin"`
-	Sid string `json:"Sid"`
-	Skey string `json:"Sid"`
-	DeviceID string `json:"Sid"`
-}
 
 func GetQrcode() (err error) {
 	url := "https://login.wx.qq.com/jslogin?appid=wx782c26e4c19acffb&redirect_uri=https%3A%2F%2Fwx.qq.com%2Fcgi-bin%2Fmmwebwx-bin%2Fwebwxnewloginpage&fun=new&lang=zh_CN&_=1525777185095"
@@ -154,34 +148,62 @@ func login() {
 	rand.Seed(time.Now().UnixNano())
 	deviceNum := rand.Intn(999999999) + rand.Intn(1) * 1000000000
 	deviceId := fmt.Sprintf("%s%d","e",deviceNum)
-	baseRequest.Sid = result.Wxsid
-	baseRequest.Uin = result.Wxuin
-	baseRequest.Skey = result.Pass_ticket
-	baseRequest.DeviceID = deviceId
-
+	baseRequest := make(map[string]interface{})
+	baseRequest["Sid"] = result.Wxsid
+	baseRequest["Uin"] = result.Wxuin
+	baseRequest["Skey"] = result.Pass_ticket
+	baseRequest["DeviceID"] = deviceId
+	BaseRequest["BaseRequest"] = baseRequest
+	pass_ticket = result.Pass_ticket
+	Init()
 }
 
-func init(){
+func Init(){
 	timeStamp := time.Now().UnixNano() /1000
-	uri :=fmt.Sprintf("%s/cgi-bin/mmwebwx-bin/webwxinit?r=",BaseUrl,timeStamp)
-	jsonBody,err := json.Marshal(baseRequest)
-	if err != nil{
-		fmt.Println("json marshal failed")
-	}
-	response,err :=http.Post(uri,"application/json",bytes.NewReader(jsonBody))
-	if err != nil {
+	uri :=fmt.Sprintf("%s/cgi-bin/mmwebwx-bin/webwxinit?r=%d&pass_ticket=%s",BaseUrl,timeStamp,pass_ticket)
+	fmt.Println(uri)
+	fmt.Println(BaseRequest)
+	body,err :=httpPost(uri,BaseRequest)
+	if err !=nil{
 		fmt.Println("init failed")
 		return
 	}
+	//fmt.Println(string(body))
+	synsStatus()
+}
 
+func synsStatus(){
+
+}
+func httpGet(uri string,param map[string]string)(body []byte, err error){
+
+	if err != nil {
+		fmt.Println("marshal json data failed")
+		return
+	}
+	response,err := http.Get(uri)
+	if err !=nil {
+		fmt.Println("http get failed")
+	}
 	defer response.Body.Close()
-	fmt.Println(response.Body)
+	body,err = ioutil.ReadAll(response.Body)
+	return
 }
 
-func httpGet(uri string,param map[string]interface{})(body []byte, err error){
-return
-}
-
-func httpPost()  {
+func httpPost(uri string,data map[string]interface{}) (body []byte,err error) {
+	jsonData,err := json.Marshal(data)
+	fmt.Println(string(jsonData))
+	if err != nil {
+		fmt.Println("marshal json data failed")
+		return
+	}
+	response,err := http.Post(uri,"application/json",bytes.NewReader(jsonData))
+	if err !=nil {
+		fmt.Println("post failed")
+		return
+	}
+	defer response.Body.Close()
+	body,err = ioutil.ReadAll(response.Body)
+	return
 
 }
