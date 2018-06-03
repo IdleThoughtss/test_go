@@ -1,20 +1,17 @@
 package main
 
 import (
-	"github.com/IdleThoughtss/login"
-	"fmt"
+	"github.com/IdleThoughtss/wechat"
 )
 
+func main(){
+	server := wechat.Server{}
+	server.SetHandler(handler)
+	server.Start()
 
-
-
-func main() {
-	err := login.GetQrcode()
-	if err != nil {
-		fmt.Print("request failed!")
-		return
-	}
 }
 
+func handler(wx *wechat.Server,message wechat.AddMsg)  {
 
+}
 
