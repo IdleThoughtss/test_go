@@ -132,4 +132,3 @@ type OtherMsg struct {
 
 }
 
-{{0 @68519bfab6585599a66c7e1619737d92 懒人闲思 /cgi-bin/mmwebwx-bin/webwxgeticon?seq=685124159&username=@68519bfab6585599a66c7e1619737d92&skey=@crypt_2984_6c70aebd4e0741fe520beaeaeb4f64b7 7 0 []  0 1 我想静静 0 0 LRXS lanrenxiansai   0 0 0 103527 江苏 南京  17 0  0 lld  0} {0 @4d1a2598c462d967cdb2a3d902713f024d8b364cecdd34df80dff6e1 静静 /cgi-bin/mmwebwx-bin/webwxgeticon?seq=700448348&username=@4d1a2598c462d967cdb2a3b31578a8d902713f024d8b364cecdddf80dff6e1&skey=@crypt_c0972984_6c70aebd4e0741fe520beaeaeb4f64b7 3 0 [] 静静宝贝 0 2 我听见了你的声音，也藏着颗不敢见的心。 0 0 JJ jingjing JJBB jingj上海 徐汇  17 0  0   0} 你什么时候睡 1 1528128379 0xc4200f0000}
