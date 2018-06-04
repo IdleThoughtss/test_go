@@ -30,7 +30,7 @@ type Server struct{
 	handler HandleFunc
 }
 
-
+type HandleFunc func (wx *Server,message Msg)
 
 func (wx *Server) Start() (err error) {
 	wx.init()
@@ -299,12 +299,21 @@ func (wx *Server) handle(message Message)  {
 	}
 
 	for _,msgItem := range message.AddMsgList {
-		//user,ok := wx.getUserInfo(msgItem.FromUserName)
-		//if ok {
-			wx.handler(wx,msgItem)
-		//}
+			var msg Msg
+			msg.init(wx,msgItem)
+			wx.handler(wx,msg)
 	}
 }
+
+func (wx *Server)send(msg SendMsg) (response []byte,err error) {
+	uri := `/cgi-bin/mmwebwx-bin/webwxsendmsg?pass_ticket=` + wx.passTicket
+	data := make(map[string]interface{})
+	data[`BaseRequest`] = wx.baseRequest
+	data[`Msg`] = msg
+	response,err = wx.httpPost(uri,data)
+	return
+}
+
 func (wx *Server) SetHandler (handler HandleFunc) {
 	wx.handler = handler
 }

@@ -210,4 +210,3 @@ type RecommendInfo struct {
 	OpCode     int    `json:"OpCode"`
 }
 
-type HandleFunc func (wx *Server,message AddMsg)
