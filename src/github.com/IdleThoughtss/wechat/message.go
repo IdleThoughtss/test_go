@@ -1,11 +1,16 @@
 package wechat
 
 type Msg struct {
-	fromUser interface{}
-	toUser interface{}
-	content interface{}
+	FromUser *User
+	ToUser *User
+	Content string
+	ContentType string
 }
 
-func (msg *Msg)reply(wx Server)  {
+func (msg *Msg)Reply(wx *Server)  {
 	wx.send(msg)
+}
+
+func (msg *Msg)From(wx *Server){
+
 }

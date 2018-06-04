@@ -11,7 +11,7 @@ func main(){
 
 }
 
-func handler(wx *wechat.Server,message wechat.AddMsg)  {
+func handler(wx *wechat.Server,message wechat.Msg)  {
 
 }
 

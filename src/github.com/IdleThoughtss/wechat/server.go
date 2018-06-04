@@ -25,7 +25,7 @@ type Server struct{
 	baseRequest map[string]string
 	passTicket string
 	syncKey SyncKey
-	contactList  map[string]Contact
+	ContactList  map[string]Contact
 	user User
 	handler HandleFunc
 }
@@ -52,7 +52,7 @@ func (wx *Server) init()  {
 		CheckRedirect:nil,
 	}
 	wx.baseRequest = make(map[string]string)
-	wx.contactList = make(map[string]Contact)
+	wx.ContactList = make(map[string]Contact)
 }
 
 func (wx *Server) showQrcode() {
@@ -207,8 +207,8 @@ func (wx *Server) getContact()  {
 
 func  (wx *Server) pushContact(list []Contact){
 	for _,item := range list{
-		if _,ok := wx.contactList[item.UserName];!ok{
-			wx.contactList[item.UserName] = item
+		if _,ok := wx.ContactList[item.UserName];!ok{
+			wx.ContactList[item.UserName] = item
 		}
 	}
 }
@@ -310,7 +310,7 @@ func (wx *Server) SetHandler (handler HandleFunc) {
 }
 
 func (wx *Server) getUserInfo (userName string)(contact Contact ,ok bool){
-	contact,ok = wx.contactList[userName]
+	contact,ok = wx.ContactList[userName]
 	return
 }
 
