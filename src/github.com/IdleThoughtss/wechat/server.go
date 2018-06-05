@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"strconv"
 	"net/http/cookiejar"
+	"log"
 )
 
 type Server struct{
@@ -26,8 +27,13 @@ type Server struct{
 	passTicket string
 	syncKey SyncKey
 	ContactList  map[string]Contact
-	user User
+	User User
 	handler HandleFunc
+}
+
+func NewInstance() (server *Server) {
+	server = &Server{}
+	return
 }
 
 type HandleFunc func (wx *Server,message Msg)
@@ -60,18 +66,21 @@ func (wx *Server) showQrcode() {
 	response , err := http.Get(imgUrl)
 	if err != nil{
 		fmt.Println("open Qrcode failed")
+		log.Println(err)
 		return
 	}
 	defer response.Body.Close()
 	file ,err := os.Create("../tmp/qrcode.jpg")
 	if err != nil {
 		fmt.Println("create image file failed")
+		log.Println(err)
 		return
 	}
 	defer file.Close()
 	_,err = io.Copy(file,response.Body)
 	if err != nil {
 		fmt.Println("write Qrcode failed")
+		log.Println(err)
 		return
 	}
 	system := runtime.GOOS
@@ -135,6 +144,7 @@ func (wx *Server) login() {
 
 	if err !=nil {
 		fmt.Println("request redirectUri failed")
+		log.Println(err)
 	}
 	xmlprefix :=[]byte(`<?xml version="1.0" encoding="UTF-8"?>`)
 	xmlful := append(xmlprefix,response...)
@@ -147,7 +157,6 @@ func (wx *Server) login() {
 	rand.Seed(time.Now().UnixNano())
 	deviceNum := rand.Intn(999999999) + rand.Intn(1) * 1000000000
 	deviceId := fmt.Sprintf("%s%d","e",deviceNum)
-	fmt.Println(wx.baseRequest)
 	wx.baseRequest["Sid"] = result.Wxsid
 	wx.baseRequest["Uin"] = result.Wxuin
 	wx.baseRequest["Skey"] = result.Skey
@@ -164,11 +173,13 @@ func (wx *Server)  initInfo(){
 	body,err :=wx.httpPost(uri,BaseRequest)
 	if err !=nil{
 		fmt.Println("get init info failed")
+		log.Println(err)
 		return
 	}
 	var res InitResponse
 	if err :=json.Unmarshal(body,&res);err != nil{
 		fmt.Println("Unmarshal json failed")
+		log.Println(err)
 		return
 	}
 
@@ -178,9 +189,8 @@ func (wx *Server)  initInfo(){
 	}
 	wx.pushContact(res.ContactList)
 	wx.syncKey = res.SyncKey
-	wx.user = res.User
+	wx.User = res.User
 	wx.getContact()
-	wx.syncStatus()
 }
 
 func (wx *Server) getContact()  {
@@ -194,10 +204,12 @@ func (wx *Server) getContact()  {
 	response,err :=wx.httpGet(uri)
 	if err != nil {
 		fmt.Println("getContact failed !")
+		log.Println(err)
 	}
 	var contactResponse ContactResponse
 	if err := json.Unmarshal(response,&contactResponse); err !=nil{
 		fmt.Println("Unmarshal ContactResponse failed!")
+		log.Println(err)
 	}
 	if contactResponse.MemberCount >0 {
 		wx.pushContact(contactResponse.MemberList)
@@ -213,7 +225,8 @@ func  (wx *Server) pushContact(list []Contact){
 	}
 }
 
-func (wx *Server) syncStatus(){
+func (wx *Server) HandleMessage(handler HandleFunc){
+	wx.handler = handler
 	uri := "https://webpush.wx.qq.com/cgi-bin/mmwebwx-bin/synccheck"
 	query := make(map[string]string)
 	query["skey"] = wx.baseRequest["Skey"]
@@ -233,8 +246,12 @@ func (wx *Server) syncStatus(){
 		res,_ := wx.httpGet(uri)
 		rule,_ :=regexp.Compile(`retcode:"([0-9]*)",selector:"([0-9]*)"`)
 		match := rule.FindSubmatch(res)
-		retcode := string( match[1])
-		selector :=string( match[2])
+		// todo
+		if len(match) < 2 {
+			continue
+		}
+		retcode := string(match[1])
+		selector :=string(match[2])
 
 		if retcode != "0"{
 			fmt.Println("sync Failed")
@@ -281,6 +298,7 @@ func (wx *Server) getMessage()  {
 	response,err :=wx.httpPost(uri,requestBody)
 	if err !=nil{
 		fmt.Println("get message failed")
+		log.Print(err)
 	}
 	msg := Message{}
 	if err := json.Unmarshal(response,&msg) ;err !=nil {
@@ -289,9 +307,11 @@ func (wx *Server) getMessage()  {
 	wx.handle(msg)
 }
 
+
 func (wx *Server) handle(message Message)  {
 	if message.BaseResponse.Ret !=0 {
 		fmt.Println(`message error %s`,message.BaseResponse.ErrMsg)
+		log.Print(message.BaseResponse.ErrMsg)
 	}
 	wx.syncKey = message.SyncKey
 	if message.ModContactCount > 0{
@@ -300,13 +320,17 @@ func (wx *Server) handle(message Message)  {
 
 	for _,msgItem := range message.AddMsgList {
 			var msg Msg
+			if msgItem.FromUserName == wx.User.UserName {
+				//continue
+			}
 			msg.init(wx,msgItem)
+			//fmt.Println(msgItem)
 			wx.handler(wx,msg)
 	}
 }
 
 func (wx *Server)send(msg SendMsg) (response []byte,err error) {
-	uri := `/cgi-bin/mmwebwx-bin/webwxsendmsg?pass_ticket=` + wx.passTicket
+	uri := BaseUrl + `/cgi-bin/mmwebwx-bin/webwxsendmsg?pass_ticket=` + wx.passTicket
 	data := make(map[string]interface{})
 	data[`BaseRequest`] = wx.baseRequest
 	data[`Msg`] = msg
@@ -332,7 +356,7 @@ func (wx *Server) httpGet(uri string)(body []byte, err error){
 	req.Header.Add("User-agent", UserAgent)
 	response,err := wx.client.Do(req)
 	if err !=nil {
-		fmt.Println("http get failed")
+		log.Print(err)
 		return
 	}
 	defer response.Body.Close()
@@ -345,6 +369,7 @@ func  (wx *Server) httpPost(uri string,data map[string]interface{}) (body []byte
 
 	if err != nil {
 		fmt.Println("marshal json data failed")
+		log.Print(err)
 		return
 	}
 	req,_ := http.NewRequest("POST",uri,bytes.NewReader(jsonData))
@@ -354,6 +379,7 @@ func  (wx *Server) httpPost(uri string,data map[string]interface{}) (body []byte
 	response,err := wx.client.Do(req)
 	if err !=nil {
 		fmt.Println("post failed")
+		log.Print(err)
 		return
 	}
 	defer response.Body.Close()

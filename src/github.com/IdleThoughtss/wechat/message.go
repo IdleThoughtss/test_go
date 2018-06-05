@@ -24,8 +24,8 @@ func (msg *Msg)Reply(content string)  {
 	id := time.Now().UnixNano()
 	 sendMsg := SendMsg{
 	 	id,
-	 	`content`,
-	 	msg.Wx.user.UserName,
+	 	content,
+	 	msg.Wx.User.UserName,
 	 	id,
 	 	msg.From.UserName,
 	 	1,
