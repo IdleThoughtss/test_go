@@ -2,12 +2,20 @@ package wechat
 
 import "time"
 
+const (
+	MSG_TEXT = 1
+	MSG_IMG = 2
+	MSG_VOICE = 3
+	MSG_VIDEO = 4
+	MSG_REDBAG = 5
+)
 type Msg struct {
 	From Contact
 	To Contact
 	Content string
 	ContentType int
 	CreateTime int
+	Type int
 	Wx *Server
 }
 
@@ -42,18 +50,21 @@ func (msg *Msg)init(wx *Server,msgItem AddMsg)  {
 	switch msgItem.MsgType {
 	case 1:
 		msg.Content = msgItem.Content
+		msg.Type = MSG_TEXT
 	case 34: // voice
 		msg.Content = BaseUrl +`/cgi-bin/mmwebwx-bin/webwxgetvoice?msgid=`+ msgItem.MsgID
-	case 3: // img
-	case 47://表情包
+		msg.Type = MSG_VOICE
+	case 3,47:// img ,表情包
 		msg.Content = BaseUrl + `/cgi-bin/mmwebwx-bin/webwxgetmsgimg?&MsgID=` + msgItem.MsgID
+		msg.Type = MSG_IMG
 	case 43: // video
 		msg.Content = BaseUrl + `/cgi-bin/mmwebwx-bin/webwxgetvideo?msgid=` + msgItem.MsgID
+		msg.Type = MSG_VIDEO
 	case 49://公众号 转账 乱七八糟
-	case 51:
-		//open dialog
+	case 51: //open dialog
 	case 10000 : // redBag
 		msg.Content = msgItem.Content
+		msg.Type = MSG_REDBAG
 	}
 }
 

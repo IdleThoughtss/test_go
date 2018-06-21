@@ -10,18 +10,27 @@ import (
 func main(){
 	wx := wechat.NewInstance()
 	wx.Start()
-	fh,_ := os.Create(`tmp.aaa`)
+	fh,err := os.Create(`aaa`)
+	if err != nil {
+		fmt.Println(err)
+	}
 	c,_ := json.Marshal(wx.ContactList)
+	if err != nil {
+		fmt.Println(err)
+	}
 	n,_ := fh.Write(c)
+	if err != nil {
+		fmt.Println(err)
+	}
 	fmt.Print(n)
-	//wx.HandleMessage(handler)
+	wx.HandleMessage(handler)
 
 
 }
 
 func handler(wx *wechat.Server,message wechat.Msg)  {
-		if message.From.RemarkName == `静静宝贝` {
-			message.Reply(`你别回来了！`)
+		if wechat.MSG_TEXT == message.Type {
+			fmt.Println(message.From.NickName + `:` + message.Content)
 		}
 }
 

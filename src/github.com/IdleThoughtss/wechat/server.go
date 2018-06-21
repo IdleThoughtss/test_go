@@ -243,11 +243,15 @@ func (wx *Server) HandleMessage(handler HandleFunc){
 		query["_"] = strconv.FormatInt(firstTIme + 1 ,10)
 		query["r"] = timeNow
 		uri += formatQueryString(query)
-		res,_ := wx.httpGet(uri)
+		res,err := wx.httpGet(uri)
+		if err != nil {
+			log.Println(err)
+			return
+		}
 		rule,_ :=regexp.Compile(`retcode:"([0-9]*)",selector:"([0-9]*)"`)
 		match := rule.FindSubmatch(res)
 		// todo
-		if len(match) < 2 {
+		if len(match) < 3 {
 			continue
 		}
 		retcode := string(match[1])
