@@ -33,4 +33,3 @@ func handler(wx *wechat.Server,message wechat.Msg)  {
 			fmt.Println(message.From.NickName + `:` + message.Content)
 		}
 }
-
